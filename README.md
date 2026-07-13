@@ -13,16 +13,18 @@ Reproducible Apple Silicon macOS workstation configuration for software developm
 
 ## First run
 
-Review the repository before executing anything. Then:
+On a clean Mac, follow `STAGE0.md`. After installing Apple's Command Line Tools:
 
 ```bash
-./setup --dry-run
+git clone https://github.com/YOUR_GITHUB_USERNAME/mac-bootstrap.git
+cd mac-bootstrap
 ./setup
 ./doctor
 ```
 
-The initial run may pause for Xcode Command Line Tools, GitHub authentication,
-Docker permissions, and application sign-in. It never stores credentials.
+`setup` installs Homebrew when missing, presents its plan, and requests
+confirmation. It may pause for administrator approval, Docker permissions, and
+application sign-in. It never stores credentials.
 
 ## Commands
 
@@ -37,12 +39,13 @@ Docker permissions, and application sign-in. It never stores credentials.
 ## Bootstrap order on a completely new Mac
 
 1. Sign in to the Mac and enable FileVault.
-2. Run `./setup`; approve Xcode Command Line Tools if macOS requests it.
-3. Authenticate GitHub with `gh auth login` when prompted.
-4. Create a unique SSH key with `./scripts/github-ssh.sh` and add it to GitHub.
-5. Open Docker Desktop once and accept its privileged helper installation.
-6. Sign in manually to VPN, messaging, AI, and Apple services.
-7. Run `./doctor` and resolve any warnings.
+2. Install Xcode Command Line Tools and clone this public repository.
+3. Run `./setup`; it installs Homebrew and applies the declared configuration.
+4. Optionally authenticate GitHub with `gh auth login`.
+5. Create a unique SSH key with `./scripts/github-ssh.sh` and add it to GitHub.
+6. Open Docker Desktop once and accept its privileged helper installation.
+7. Sign in manually to VPN, messaging, AI, and Apple services.
+8. Run `./doctor` and resolve any warnings.
 
 ## Version policy
 

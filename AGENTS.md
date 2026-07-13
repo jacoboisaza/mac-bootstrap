@@ -4,14 +4,15 @@ This repository configures a real developer workstation. Treat it as production 
 
 ## Required workflow
 
-1. Read `README.md`, `Brewfile`, and every script affected by the requested change.
-2. Inspect the current machine before proposing changes.
-3. Present a concise plan and identify commands requiring authentication, admin approval, logout, or restart.
-4. Run `./setup --dry-run` before applying changes.
-5. Never print, copy, commit, or request secret values.
-6. Back up an existing configuration file before replacing or linking it.
-7. Apply the smallest relevant phase; do not upgrade unrelated packages.
-8. Run `./doctor` and report passed, failed, manual, and skipped checks.
+1. On a clean Mac, follow only the public-repository instructions in `STAGE0.md` first.
+2. Read `README.md`, `Brewfile`, and every script affected by the requested change.
+3. Inspect the current machine before proposing changes.
+4. Present a concise plan and identify commands requiring authentication, admin approval, logout, or restart.
+5. Run `./setup --dry-run` before applying changes.
+6. Never print, copy, commit, or request secret values.
+7. Back up an existing configuration file before replacing or linking it.
+8. Apply the smallest relevant phase; do not upgrade unrelated packages.
+9. Run `./doctor` and report passed, failed, manual, and skipped checks.
 
 ## Prohibited without explicit user approval
 
