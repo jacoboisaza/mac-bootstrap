@@ -14,6 +14,7 @@ for cmd in brew git gh uv volta node pnpm docker kubectl helm kind k9s starship 
 docker info >/dev/null 2>&1 && ok "Docker engine" || manual "Open Docker Desktop and finish setup"
 gh auth status >/dev/null 2>&1 && ok "GitHub authentication" || manual "Run: gh auth login"
 tailscale status >/dev/null 2>&1 && ok "Tailscale connection" || manual "Open Tailscale and sign in"
+[[ -d "/Applications/ExpressVPN.app" ]] && ok "ExpressVPN application" || manual "Install ExpressVPN with its official GUI installer"
 
 for file in "$HOME/.zshrc" "$HOME/.config/starship.toml"; do
   [[ -L "$file" ]] && ok "$file linked" || bad "$file linked"

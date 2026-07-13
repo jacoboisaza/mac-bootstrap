@@ -26,6 +26,10 @@ cd mac-bootstrap
 confirmation. It may pause for administrator approval, Docker permissions, and
 application sign-in. It never stores credentials.
 
+Long phases print verbose tool output and a heartbeat every 20 seconds, followed
+by their duration and final status. On macOS, press `Ctrl+T` at any time to ask
+the terminal for foreground-process status without interrupting it.
+
 ## Commands
 
 ```bash
@@ -64,3 +68,12 @@ Antigravity CLI, so that migration should be reviewed during a future update.
 - Existing dotfiles are copied to `~/.mac-bootstrap-backups/<timestamp>/`.
 - Rosetta 2 is not installed automatically.
 - macOS preferences are limited to conservative, reversible developer defaults.
+
+## Manual applications
+
+- ExpressVPN: download and open the official macOS installer, then approve its
+  privileged helper in the GUI. It is excluded from `Brewfile` because that
+  helper can fail under Homebrew's non-interactive cask installation.
+- GitHub Copilot in VS Code: use the current built-in Copilot Chat and sign in
+  interactively. Legacy `github.copilot*` marketplace entries are excluded to
+  prevent attempts to downgrade the built-in extension.

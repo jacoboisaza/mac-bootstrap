@@ -48,7 +48,8 @@ cask "lm-studio"
 # Browsing and networking
 cask "google-chrome"
 cask "tailscale-app"
-cask "expressvpn"
+# ExpressVPN is intentionally manual: its privileged GUI helper can fail when
+# invoked non-interactively by Homebrew and would abort the whole bundle.
 cask "transmit"
 
 # Communication and media
@@ -73,8 +74,8 @@ vscode "dbaeumer.vscode-eslint"
 vscode "eamodio.gitlens"
 vscode "editorconfig.editorconfig"
 vscode "esbenp.prettier-vscode"
-vscode "github.copilot"
-vscode "github.copilot-chat"
+# Current VS Code includes Copilot Chat. Installing the legacy marketplace
+# dependency can attempt to downgrade the newer built-in extension.
 vscode "ms-azuretools.vscode-docker"
 vscode "ms-playwright.playwright"
 vscode "ms-python.debugpy"

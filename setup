@@ -50,9 +50,15 @@ fi
 
 log "Homebrew bundle"
 if [[ "$DRY_RUN" == "1" ]]; then
-  echo "+ brew bundle install --file=$ROOT_DIR/Brewfile --no-upgrade"
+  run_progress "Homebrew packages and applications" \
+    brew bundle install --file="$ROOT_DIR/Brewfile" --no-upgrade --verbose
 else
-  brew bundle check --file="$ROOT_DIR/Brewfile" || brew bundle install --file="$ROOT_DIR/Brewfile" --no-upgrade
+  if brew bundle check --file="$ROOT_DIR/Brewfile" >/dev/null 2>&1; then
+    echo "Brewfile dependencies are already satisfied."
+  else
+    run_progress "Homebrew packages and applications" \
+      brew bundle install --file="$ROOT_DIR/Brewfile" --no-upgrade --verbose
+  fi
 fi
 
 log "Oh My Zsh"
@@ -65,10 +71,12 @@ if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
 fi
 
 log "Pinned runtimes"
-run volta install "node@$NODE_VERSION"
-run volta install "pnpm@$PNPM_VERSION"
-run volta install "@google/gemini-cli@$GEMINI_CLI_VERSION"
-for version in $PYTHON_VERSIONS; do run uv python install "$version"; done
+run_progress "Node.js $NODE_VERSION" volta install "node@$NODE_VERSION"
+run_progress "pnpm $PNPM_VERSION" volta install "pnpm@$PNPM_VERSION"
+run_progress "Gemini CLI $GEMINI_CLI_VERSION" volta install "@google/gemini-cli@$GEMINI_CLI_VERSION"
+for version in $PYTHON_VERSIONS; do
+  run_progress "Python $version" uv python install "$version"
+done
 run uv python pin --global "$GLOBAL_PYTHON_VERSION"
 
 log "Dotfiles"

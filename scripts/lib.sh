@@ -16,6 +16,46 @@ run() {
   fi
 }
 
+# Run a foreground command normally so prompts still work, while a background
+# heartbeat confirms that the bootstrap has not stalled during quiet periods.
+run_progress() {
+  local label="$1"
+  shift
+  local started_at=$SECONDS heartbeat_pid status elapsed
+
+  log "$label"
+  if [[ "$DRY_RUN" == "1" ]]; then
+    run "$@"
+    return 0
+  fi
+
+  (
+    while true; do
+      sleep 20
+      printf '... %s still running (%dm %02ds elapsed)\n' \
+        "$label" "$(((SECONDS - started_at) / 60))" "$(((SECONDS - started_at) % 60))"
+    done
+  ) &
+  heartbeat_pid=$!
+
+  set +e
+  "$@"
+  status=$?
+  set -e
+
+  kill "$heartbeat_pid" 2>/dev/null || true
+  wait "$heartbeat_pid" 2>/dev/null || true
+  elapsed=$((SECONDS - started_at))
+
+  if [[ "$status" -eq 0 ]]; then
+    printf 'DONE  %s (%dm %02ds)\n' "$label" "$((elapsed / 60))" "$((elapsed % 60))"
+  else
+    printf 'FAILED %s after %dm %02ds (exit %d)\n' \
+      "$label" "$((elapsed / 60))" "$((elapsed % 60))" "$status" >&2
+  fi
+  return "$status"
+}
+
 backup_and_link() {
   local source="$1" target="$2" backup_root="$3"
   if [[ -L "$target" && "$(readlink "$target")" == "$source" ]]; then
