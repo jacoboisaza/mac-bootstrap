@@ -1,0 +1,23 @@
+#!/bin/bash
+set -uo pipefail
+
+pass=0; fail=0; warn=0
+ok() { printf 'PASS  %s\n' "$1"; pass=$((pass+1)); }
+bad() { printf 'FAIL  %s\n' "$1"; fail=$((fail+1)); }
+manual() { printf 'MANUAL %s\n' "$1"; warn=$((warn+1)); }
+check() { command -v "$1" >/dev/null 2>&1 && ok "$1" || bad "$1"; }
+
+echo "mac-bootstrap doctor"
+[[ "$(uname -m)" == "arm64" ]] && ok "Apple Silicon" || bad "Apple Silicon"
+for cmd in brew git gh uv volta node pnpm docker kubectl helm kind k9s starship code codex claude gemini copilot; do check "$cmd"; done
+
+docker info >/dev/null 2>&1 && ok "Docker engine" || manual "Open Docker Desktop and finish setup"
+gh auth status >/dev/null 2>&1 && ok "GitHub authentication" || manual "Run: gh auth login"
+tailscale status >/dev/null 2>&1 && ok "Tailscale connection" || manual "Open Tailscale and sign in"
+
+for file in "$HOME/.zshrc" "$HOME/.config/starship.toml"; do
+  [[ -L "$file" ]] && ok "$file linked" || bad "$file linked"
+done
+
+printf '\nSummary: %d passed, %d failed, %d manual\n' "$pass" "$fail" "$warn"
+[[ "$fail" -eq 0 ]]

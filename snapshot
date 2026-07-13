@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+out="${1:-$ROOT_DIR/snapshots/Brewfile.$(date +%Y%m%d-%H%M%S)}"
+mkdir -p "$(dirname "$out")"
+brew bundle dump --file="$out" --force --describe
+echo "Snapshot written to $out"

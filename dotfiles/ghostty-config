@@ -1,0 +1,4 @@
+font-family = JetBrainsMono Nerd Font
+font-size = 14
+macos-titlebar-style = tabs
+shell-integration = zsh
