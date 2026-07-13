@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 bash -n \
   "$ROOT_DIR/setup" \
+  "$ROOT_DIR/stage0" \
   "$ROOT_DIR/doctor" \
   "$ROOT_DIR/update" \
   "$ROOT_DIR/snapshot" \

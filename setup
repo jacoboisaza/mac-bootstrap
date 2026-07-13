@@ -77,8 +77,12 @@ if ! xcode-select -p >/dev/null 2>&1; then
     echo "+ xcode-select --install"
   else
     xcode-select --install
-    echo "Complete Apple's installer, then run ./setup again."
-    exit 0
+    echo "Complete Apple's graphical installer."
+    read -r -p "Press Return only after the installation finishes. " _
+    xcode-select -p >/dev/null 2>&1 || {
+      echo "Command Line Tools are not ready. Complete the installer and rerun ./setup." >&2
+      exit 1
+    }
   fi
 else
   echo "Xcode Command Line Tools ready."

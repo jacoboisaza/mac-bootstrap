@@ -1,0 +1,40 @@
+#!/bin/bash
+set -euo pipefail
+
+REPOSITORY_URL="https://github.com/jacoboisaza/mac-bootstrap.git"
+TARGET="${MAC_BOOTSTRAP_DIR:-$HOME/mac-bootstrap}"
+
+[[ "$(uname -s)" == "Darwin" ]] || { echo "macOS is required." >&2; exit 1; }
+[[ "$(uname -m)" == "arm64" ]] || { echo "Apple Silicon arm64 is required." >&2; exit 1; }
+
+cat <<EOF
+mac-bootstrap Stage 0 will:
+  1. Launch Apple's Command Line Tools installer if needed
+  2. Clone $REPOSITORY_URL into $TARGET
+  3. Start the reviewed setup script
+
+It does not install Homebrew or applications itself.
+EOF
+read -r -p "Continue? [y/N] " answer
+[[ "$answer" =~ ^[Yy]$ ]] || exit 0
+
+if ! xcode-select -p >/dev/null 2>&1; then
+  xcode-select --install
+  echo "Complete Apple's graphical installer."
+  read -r -p "Press Return only after the installation finishes. " _
+  xcode-select -p >/dev/null 2>&1 || {
+    echo "Command Line Tools are not ready. Complete the installer and rerun Stage 0." >&2
+    exit 1
+  }
+fi
+
+command -v git >/dev/null 2>&1 || { echo "Git is unavailable after Command Line Tools installation." >&2; exit 1; }
+if [[ -e "$TARGET" ]]; then
+  echo "$TARGET already exists; refusing to overwrite it." >&2
+  echo "For an existing checkout, run: cd '$TARGET' && git pull --ff-only && ./setup" >&2
+  exit 1
+fi
+
+git clone "$REPOSITORY_URL" "$TARGET"
+cd "$TARGET"
+exec ./setup

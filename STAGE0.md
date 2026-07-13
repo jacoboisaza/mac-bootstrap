@@ -1,31 +1,21 @@
-# Stage 0 — clean Mac and public repository
+# Stage 0 — clean Apple Silicon Mac
 
-Stage 0 exists only to obtain and start the public `mac-bootstrap` repository.
-
-## 1. Install Apple's command-line tools
-
-```bash
-xcode-select --install
-```
-
-Wait for the installer to finish. This is the only separate prerequisite.
-
-## 2. Clone and run
-
-Replace the GitHub username, then paste:
+Stage 0 uses only macOS's built-in `curl` and `/bin/bash`. It launches Apple's
+Command Line Tools installer when needed, clones the latest default branch as a
+real Git checkout, and hands control to `setup`.
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/mac-bootstrap.git &&
-cd mac-bootstrap &&
-./setup
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/jacoboisaza/mac-bootstrap/main/stage0)"
 ```
 
-`setup` shows its plan and requests confirmation before changing the workstation.
-When it finishes, run:
+The script displays its actions and asks for confirmation. If Apple's graphical
+installer opens, complete it and then press Return in Terminal. `setup` handles
+Homebrew and the complete workstation configuration afterward.
+
+To inspect Stage 0 before running it:
 
 ```bash
-./doctor
+curl -fsSL https://raw.githubusercontent.com/jacoboisaza/mac-bootstrap/main/stage0
 ```
 
-Stage 0 must not install applications, change preferences, or handle credentials.
-Homebrew and the complete workstation configuration belong to `setup`.
+Stage 0 refuses to overwrite an existing `~/mac-bootstrap` directory.
