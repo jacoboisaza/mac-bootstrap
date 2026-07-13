@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DRY_RUN="${DRY_RUN:-0}"
 
-log() { printf '\n==> %s\n' "$*"; }
+log() { printf '\n[%s] ==> %s\n' "$(date '+%H:%M:%S')" "$*"; }
 warn() { printf 'WARNING: %s\n' "$*" >&2; }
 run() {
   if [[ "$DRY_RUN" == "1" ]]; then
@@ -38,6 +38,8 @@ run_progress() {
   ) &
   heartbeat_pid=$!
 
+  trap 'kill "$heartbeat_pid" 2>/dev/null || true; exit 130' INT TERM
+
   set +e
   "$@"
   status=$?
@@ -45,6 +47,7 @@ run_progress() {
 
   kill "$heartbeat_pid" 2>/dev/null || true
   wait "$heartbeat_pid" 2>/dev/null || true
+  trap - INT TERM
   elapsed=$((SECONDS - started_at))
 
   if [[ "$status" -eq 0 ]]; then

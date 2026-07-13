@@ -1,24 +1,115 @@
 #!/bin/bash
 set -uo pipefail
 
-pass=0; fail=0; warn=0
-ok() { printf 'PASS  %s\n' "$1"; pass=$((pass+1)); }
-bad() { printf 'FAIL  %s\n' "$1"; fail=$((fail+1)); }
-manual() { printf 'MANUAL %s\n' "$1"; warn=$((warn+1)); }
-check() { command -v "$1" >/dev/null 2>&1 && ok "$1" || bad "$1"; }
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$ROOT_DIR/config/versions.env"
+RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.env"
+runtime_locked=0
+if [[ -f "$RUNTIME_LOCK_FILE" ]]; then
+  source "$RUNTIME_LOCK_FILE"
+  runtime_locked=1
+fi
+
+# Work from fresh, non-interactive, and SSH shells without relying on dotfiles.
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
+export PATH="$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
+
+pass=0; fail=0; warnings=0; manuals=0
+ok() { printf 'PASS    %s\n' "$1"; pass=$((pass+1)); }
+bad() { printf 'FAIL    %s\n' "$1"; fail=$((fail+1)); }
+caution() { printf 'WARN    %s\n' "$1"; warnings=$((warnings+1)); }
+manual() { printf 'MANUAL  %s\n' "$1"; manuals=$((manuals+1)); }
+check_command() { command -v "$1" >/dev/null 2>&1 && ok "$1 command" || bad "$1 command"; }
+
+check_link() {
+  local target="$1" expected="$2"
+  if [[ -L "$target" && "$(readlink "$target")" == "$expected" ]]; then
+    ok "$target linked"
+  else
+    bad "$target linked to repository"
+  fi
+}
 
 echo "mac-bootstrap doctor"
+echo "Repository: $ROOT_DIR"
+
+[[ "$(uname -s)" == "Darwin" ]] && ok "macOS" || bad "macOS"
 [[ "$(uname -m)" == "arm64" ]] && ok "Apple Silicon" || bad "Apple Silicon"
-for cmd in brew git gh uv volta node pnpm docker kubectl helm kind k9s starship code codex claude gemini copilot; do check "$cmd"; done
+xcode-select -p >/dev/null 2>&1 && ok "Xcode Command Line Tools" || bad "Xcode Command Line Tools"
+
+if command -v brew >/dev/null 2>&1; then
+  ok "Homebrew environment"
+  brew bundle check --file="$ROOT_DIR/brew/Brewfile.core" >/dev/null 2>&1 \
+    && ok "Required Homebrew tools" \
+    || bad "Required Homebrew tools; run ./setup --only packages"
+  brew bundle check --file="$ROOT_DIR/brew/Brewfile.apps" >/dev/null 2>&1 \
+    && ok "Applications and agent CLIs" \
+    || caution "Applications incomplete; run brew bundle check --verbose --file=brew/Brewfile.apps"
+  brew bundle check --file="$ROOT_DIR/brew/Brewfile.vscode" >/dev/null 2>&1 \
+    && ok "VS Code extensions" \
+    || caution "VS Code extensions incomplete; run ./setup --only vscode"
+else
+  bad "Homebrew environment"
+fi
+
+for cmd in git gh uv volta node pnpm docker kubectl helm kind k9s starship code codex claude gemini copilot; do
+  check_command "$cmd"
+done
+
+if command -v node >/dev/null 2>&1; then
+  [[ "$(node --version)" == "v${NODE_VERSION}" || "$(node --version)" == v${NODE_VERSION}.* ]] \
+    && ok "Node.js $NODE_VERSION" || bad "Node.js expected $NODE_VERSION, found $(node --version)"
+fi
+if command -v pnpm >/dev/null 2>&1; then
+  [[ "$(pnpm --version)" == "${PNPM_VERSION}" || "$(pnpm --version)" == ${PNPM_VERSION}.* ]] \
+    && ok "pnpm $PNPM_VERSION" || bad "pnpm expected $PNPM_VERSION, found $(pnpm --version)"
+fi
+if command -v gemini >/dev/null 2>&1; then
+  gemini_version="$(gemini --version 2>/dev/null | tail -n 1)"
+  [[ "$gemini_version" == *"$GEMINI_CLI_VERSION"* ]] \
+    && ok "Gemini CLI $GEMINI_CLI_VERSION" \
+    || bad "Gemini CLI expected $GEMINI_CLI_VERSION, found ${gemini_version:-unknown}"
+fi
+
+if [[ "$runtime_locked" == "1" ]] && \
+   git -C "$ROOT_DIR" ls-files --error-unmatch config/runtime-lock.env >/dev/null 2>&1; then
+  ok "Exact runtime lock committed"
+elif [[ "$runtime_locked" == "1" ]]; then
+  caution "Exact runtime lock generated but not committed: config/runtime-lock.env"
+else
+  caution "Exact runtime lock missing; run ./setup --only runtimes and commit config/runtime-lock.env"
+fi
+if command -v uv >/dev/null 2>&1; then
+  for version in $PYTHON_VERSIONS; do
+    uv python find --managed-python "$version" >/dev/null 2>&1 \
+      && ok "Python $version available" || bad "Python $version available"
+  done
+fi
+
+if [[ -d "$HOME/.oh-my-zsh/.git" ]]; then
+  omz_ref="$(git -C "$HOME/.oh-my-zsh" rev-parse HEAD 2>/dev/null || true)"
+  [[ "$omz_ref" == "$OH_MY_ZSH_REF" ]] \
+    && ok "Oh My Zsh pinned commit" || bad "Oh My Zsh expected $OH_MY_ZSH_REF, found ${omz_ref:-unknown}"
+else
+  bad "Oh My Zsh installation"
+fi
+
+check_link "$HOME/.zprofile" "$ROOT_DIR/dotfiles/zprofile"
+check_link "$HOME/.zshrc" "$ROOT_DIR/dotfiles/zshrc"
+check_link "$HOME/.config/starship.toml" "$ROOT_DIR/dotfiles/starship.toml"
+check_link "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "$ROOT_DIR/dotfiles/ghostty-config"
+check_link "$HOME/Library/Application Support/Code/User/settings.json" "$ROOT_DIR/config/vscode-settings.json"
 
 docker info >/dev/null 2>&1 && ok "Docker engine" || manual "Open Docker Desktop and finish setup"
 gh auth status >/dev/null 2>&1 && ok "GitHub authentication" || manual "Run: gh auth login"
-tailscale status >/dev/null 2>&1 && ok "Tailscale connection" || manual "Open Tailscale and sign in"
-[[ -d "/Applications/ExpressVPN.app" ]] && ok "ExpressVPN application" || manual "Install ExpressVPN with its official GUI installer"
+command -v tailscale >/dev/null 2>&1 && tailscale status >/dev/null 2>&1 \
+  && ok "Tailscale connection" || manual "Open Tailscale and sign in"
+[[ -d "/Applications/ExpressVPN.app" ]] \
+  && ok "ExpressVPN application" || manual "Install ExpressVPN with its official GUI installer"
 
-for file in "$HOME/.zshrc" "$HOME/.config/starship.toml"; do
-  [[ -L "$file" ]] && ok "$file linked" || bad "$file linked"
-done
-
-printf '\nSummary: %d passed, %d failed, %d manual\n' "$pass" "$fail" "$warn"
+printf '\nSummary: %d passed, %d failed, %d warnings, %d manual\n' \
+  "$pass" "$fail" "$warnings" "$manuals"
 [[ "$fail" -eq 0 ]]

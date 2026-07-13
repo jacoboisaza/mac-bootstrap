@@ -3,38 +3,89 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 export DRY_RUN=0
-[[ "${1:-}" == "--dry-run" ]] && export DRY_RUN=1
+ASSUME_YES=0
+ONLY="all"
+WARNINGS=()
+
+usage() {
+  cat <<'EOF'
+Usage: ./setup [--dry-run] [--yes] [--only PHASE]
+
+Phases: packages, apps, vscode, shell, runtimes, dotfiles, macos, doctor, all
+
+  --dry-run     Print actions without modifying the machine
+  --yes         Skip the confirmation prompt
+  --only PHASE  Run one phase plus required preflight checks
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run) export DRY_RUN=1; shift ;;
+    --yes) ASSUME_YES=1; shift ;;
+    --only)
+      [[ $# -ge 2 ]] || { echo "--only requires a phase" >&2; exit 64; }
+      ONLY="$2"; shift 2 ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; usage >&2; exit 64 ;;
+  esac
+done
+
+case "$ONLY" in
+  packages|apps|vscode|shell|runtimes|dotfiles|macos|doctor|all) ;;
+  *) echo "Unknown phase: $ONLY" >&2; usage >&2; exit 64 ;;
+esac
+
 source "$ROOT_DIR/scripts/lib.sh"
 source "$ROOT_DIR/config/versions.env"
+RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.env"
+RUNTIME_LOCK_PRESENT=0
+if [[ -f "$RUNTIME_LOCK_FILE" ]]; then
+  source "$RUNTIME_LOCK_FILE"
+  RUNTIME_LOCK_PRESENT=1
+fi
 
 [[ "$(uname -s)" == "Darwin" ]] || { echo "macOS is required." >&2; exit 1; }
 [[ "$(uname -m)" == "arm64" ]] || { echo "Apple Silicon arm64 is required." >&2; exit 1; }
 
-if [[ "$DRY_RUN" != "1" ]]; then
-  cat <<'PLAN'
-mac-bootstrap will:
-  1. Install Homebrew if it is missing
-  2. Install declared CLI tools and applications
-  3. Install pinned Python and Node.js runtimes
-  4. Back up and link terminal, shell, and editor settings
-  5. Apply conservative macOS developer preferences
+should_run() { [[ "$ONLY" == "all" || "$ONLY" == "$1" ]]; }
 
-It will not delete applications, install Rosetta, or automate credentials.
+if [[ "$DRY_RUN" != "1" ]]; then
+  mkdir -p "$ROOT_DIR/logs"
+  LOG_FILE="$ROOT_DIR/logs/setup-$(date +%Y%m%d-%H%M%S).log"
+  exec > >(tee -a "$LOG_FILE") 2>&1
+  echo "Log: $LOG_FILE"
+fi
+
+cat <<PLAN
+mac-bootstrap phase: $ONLY
+
+The setup may install Homebrew, apply the selected declarative manifests,
+install pinned runtimes, back up configuration files, and apply documented
+macOS preferences. It never deletes applications, installs Rosetta, or
+automates credentials.
 PLAN
+
+if [[ "$DRY_RUN" != "1" && "$ASSUME_YES" != "1" ]]; then
   read -r -p "Continue? [y/N] " answer
   [[ "$answer" =~ ^[Yy]$ ]] || exit 0
 fi
 
-log "Xcode Command Line Tools"
+log "Preflight"
 if ! xcode-select -p >/dev/null 2>&1; then
-  if [[ "$DRY_RUN" == "1" ]]; then echo "+ xcode-select --install"; exit 0; fi
-  xcode-select --install
-  echo "Complete the installer, then run ./setup again."
-  exit 0
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "+ xcode-select --install"
+  else
+    xcode-select --install
+    echo "Complete Apple's installer, then run ./setup again."
+    exit 0
+  fi
+else
+  echo "Xcode Command Line Tools ready."
 fi
 
-log "Homebrew"
-if ! command -v brew >/dev/null 2>&1; then
+log "Homebrew environment"
+if [[ ! -x /opt/homebrew/bin/brew ]]; then
   if [[ "$DRY_RUN" == "1" ]]; then
     echo "+ install Homebrew using its official installer"
   else
@@ -47,47 +98,137 @@ elif [[ "$DRY_RUN" != "1" ]]; then
   echo "Homebrew installation did not produce /opt/homebrew/bin/brew." >&2
   exit 1
 fi
+export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
+export PATH="$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
 
-log "Homebrew bundle"
-if [[ "$DRY_RUN" == "1" ]]; then
-  run_progress "Homebrew packages and applications" \
-    brew bundle install --file="$ROOT_DIR/Brewfile" --no-upgrade --verbose
-else
-  if brew bundle check --file="$ROOT_DIR/Brewfile" >/dev/null 2>&1; then
-    echo "Brewfile dependencies are already satisfied."
-  else
-    run_progress "Homebrew packages and applications" \
-      brew bundle install --file="$ROOT_DIR/Brewfile" --no-upgrade --verbose
+apply_bundle() {
+  local label="$1" manifest="$2"
+  if [[ "$DRY_RUN" != "1" ]] && brew bundle check --file="$manifest" >/dev/null 2>&1; then
+    echo "SATISFIED $label"
+    return 0
   fi
-fi
+  run_progress "$label" brew bundle install --file="$manifest" --no-upgrade --verbose
+}
 
-log "Oh My Zsh"
-if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+install_oh_my_zsh() {
+  local target="$HOME/.oh-my-zsh" current=""
+  if [[ -d "$target/.git" ]]; then
+    current="$(git -C "$target" rev-parse HEAD 2>/dev/null || true)"
+    [[ "$current" == "$OH_MY_ZSH_REF" ]] && { echo "SATISFIED Oh My Zsh $OH_MY_ZSH_REF"; return 0; }
+    if [[ -n "$(git -C "$target" status --porcelain)" ]]; then
+      echo "Oh My Zsh has local changes; refusing to replace them." >&2
+      return 1
+    fi
+  fi
   if [[ "$DRY_RUN" == "1" ]]; then
-    echo "+ unattended Oh My Zsh installation (RUNZSH=no, CHSH=no)"
-  else
-    RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    echo "+ install Oh My Zsh at $OH_MY_ZSH_REF"
+    return 0
+  fi
+  if [[ ! -d "$target/.git" ]]; then
+    [[ ! -e "$target" ]] || { echo "$target exists but is not a Git repository." >&2; return 1; }
+    git init -q "$target"
+    git -C "$target" remote add origin https://github.com/ohmyzsh/ohmyzsh.git
+  fi
+  git -C "$target" fetch --depth=1 origin "$OH_MY_ZSH_REF"
+  git -C "$target" checkout --detach --force FETCH_HEAD
+}
+
+if should_run packages; then
+  apply_bundle "Required Homebrew tools" "$ROOT_DIR/brew/Brewfile.core"
+fi
+
+if should_run apps; then
+  if ! apply_bundle "Desktop applications" "$ROOT_DIR/brew/Brewfile.apps"; then
+    WARNINGS+=("Some applications or agent CLIs failed; review the log and rerun --only apps")
   fi
 fi
 
-log "Pinned runtimes"
-run_progress "Node.js $NODE_VERSION" volta install "node@$NODE_VERSION"
-run_progress "pnpm $PNPM_VERSION" volta install "pnpm@$PNPM_VERSION"
-run_progress "Gemini CLI $GEMINI_CLI_VERSION" volta install "@google/gemini-cli@$GEMINI_CLI_VERSION"
-for version in $PYTHON_VERSIONS; do
-  run_progress "Python $version" uv python install "$version"
-done
-run uv python pin --global "$GLOBAL_PYTHON_VERSION"
+if should_run vscode; then
+  if ! command -v code >/dev/null 2>&1 && [[ "$DRY_RUN" != "1" ]]; then
+    WARNINGS+=("VS Code CLI is unavailable; extension phase skipped")
+  elif ! apply_bundle "VS Code extensions" "$ROOT_DIR/brew/Brewfile.vscode"; then
+    WARNINGS+=("Some VS Code extensions failed; review the log and rerun --only vscode")
+  fi
+fi
 
-log "Dotfiles"
-backup="$HOME/.mac-bootstrap-backups/$(date +%Y%m%d-%H%M%S)"
-backup_and_link "$ROOT_DIR/dotfiles/zshrc" "$HOME/.zshrc" "$backup"
-backup_and_link "$ROOT_DIR/dotfiles/starship.toml" "$HOME/.config/starship.toml" "$backup"
-backup_and_link "$ROOT_DIR/dotfiles/ghostty-config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "$backup"
-backup_and_link "$ROOT_DIR/config/vscode-settings.json" "$HOME/Library/Application Support/Code/User/settings.json" "$backup"
+if should_run shell; then
+  run_progress "Oh My Zsh $OH_MY_ZSH_REF" install_oh_my_zsh
+fi
 
-log "macOS defaults"
-if [[ "$DRY_RUN" == "1" ]]; then echo "+ scripts/macos-defaults.sh"; else "$ROOT_DIR/scripts/macos-defaults.sh"; fi
+if should_run runtimes; then
+  if [[ "$DRY_RUN" != "1" ]]; then
+    command -v volta >/dev/null 2>&1 || { echo "volta is required; run ./setup --only packages" >&2; exit 1; }
+    command -v uv >/dev/null 2>&1 || { echo "uv is required; run ./setup --only packages" >&2; exit 1; }
+  fi
+  run_progress "Node.js $NODE_VERSION" volta install "node@$NODE_VERSION"
+  run_progress "pnpm $PNPM_VERSION" volta install "pnpm@$PNPM_VERSION"
+  run_progress "Gemini CLI $GEMINI_CLI_VERSION" volta install "@google/gemini-cli@$GEMINI_CLI_VERSION"
+  for version in $PYTHON_VERSIONS; do
+    run_progress "Python $version" uv python install "$version"
+  done
+  if [[ "$DRY_RUN" != "1" && "$RUNTIME_LOCK_PRESENT" == "0" ]]; then
+    resolved_node="$(node --version)"
+    resolved_node="${resolved_node#v}"
+    resolved_pnpm="$(pnpm --version)"
+    resolved_pythons=""
+    for version in $PYTHON_VERSIONS; do
+      python_path="$(uv python find --managed-python "$version")"
+      resolved="$("$python_path" -c 'import platform; print(platform.python_version())')"
+      resolved_pythons="${resolved_pythons:+$resolved_pythons }$resolved"
+    done
+    resolved_global=""
+    for version in $resolved_pythons; do
+      [[ "$version" == "$GLOBAL_PYTHON_VERSION".* ]] && resolved_global="$version"
+    done
+    [[ -n "$resolved_global" ]] || { echo "Could not resolve global Python $GLOBAL_PYTHON_VERSION" >&2; exit 1; }
+    {
+      echo "# Generated by ./setup --only runtimes. Commit this file."
+      printf 'NODE_VERSION=%q\n' "$resolved_node"
+      printf 'PNPM_VERSION=%q\n' "$resolved_pnpm"
+      printf 'PYTHON_VERSIONS=%q\n' "$resolved_pythons"
+      printf 'GLOBAL_PYTHON_VERSION=%q\n' "$resolved_global"
+      printf 'GEMINI_CLI_VERSION=%q\n' "$GEMINI_CLI_VERSION"
+    } > "$RUNTIME_LOCK_FILE"
+    echo "Generated exact runtime lock: $RUNTIME_LOCK_FILE"
+    echo "Commit config/runtime-lock.env after verification."
+    NODE_VERSION="$resolved_node"
+    PNPM_VERSION="$resolved_pnpm"
+    PYTHON_VERSIONS="$resolved_pythons"
+    GLOBAL_PYTHON_VERSION="$resolved_global"
+  fi
+  run uv python pin --global "$GLOBAL_PYTHON_VERSION"
+fi
 
-log "Complete"
-echo "Run ./doctor, then complete interactive sign-ins."
+if should_run dotfiles; then
+  backup="$HOME/.mac-bootstrap-backups/$(date +%Y%m%d-%H%M%S)"
+  backup_and_link "$ROOT_DIR/dotfiles/zprofile" "$HOME/.zprofile" "$backup"
+  backup_and_link "$ROOT_DIR/dotfiles/zshrc" "$HOME/.zshrc" "$backup"
+  backup_and_link "$ROOT_DIR/dotfiles/starship.toml" "$HOME/.config/starship.toml" "$backup"
+  backup_and_link "$ROOT_DIR/dotfiles/ghostty-config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "$backup"
+  backup_and_link "$ROOT_DIR/config/vscode-settings.json" "$HOME/Library/Application Support/Code/User/settings.json" "$backup"
+fi
+
+if should_run macos; then
+  if [[ "$DRY_RUN" == "1" ]]; then run "$ROOT_DIR/scripts/macos-defaults.sh"; else "$ROOT_DIR/scripts/macos-defaults.sh"; fi
+fi
+
+if should_run doctor; then
+  if [[ "$DRY_RUN" == "1" ]]; then echo "+ $ROOT_DIR/doctor"; else "$ROOT_DIR/doctor" || true; fi
+fi
+
+if [[ "$ONLY" == "all" ]]; then
+  log "Verification"
+  if [[ "$DRY_RUN" == "1" ]]; then echo "+ $ROOT_DIR/doctor"; else "$ROOT_DIR/doctor" || WARNINGS+=("Doctor reported failed checks"); fi
+fi
+
+log "Setup summary"
+if [[ ${#WARNINGS[@]} -eq 0 ]]; then
+  echo "Complete with no bootstrap warnings."
+  echo "Start a fresh shell with: exec zsh -l"
+  exit 0
+fi
+
+printf 'Completed with %d warning(s):\n' "${#WARNINGS[@]}"
+for warning in "${WARNINGS[@]}"; do printf '  - %s\n' "$warning"; done
+echo "Completed phases were preserved; rerun only the affected phase."
+exit 2

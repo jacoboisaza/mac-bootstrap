@@ -1,0 +1,31 @@
+# Terminal and developer applications
+cask "font-jetbrains-mono-nerd-font"
+cask "ghostty"
+cask "visual-studio-code"
+cask "postman"
+cask "dbeaver-community"
+cask "docker-desktop"
+cask "lm-studio"
+
+# Browsing and networking
+cask "google-chrome"
+cask "tailscale-app"
+cask "transmit"
+
+# Communication and media
+cask "signal"
+cask "whatsapp"
+cask "spotify"
+
+# AI desktop applications
+cask "claude"
+cask "chatgpt"
+cask "antigravity"
+
+# AI development CLIs distributed as native binaries
+cask "claude-code"
+cask "codex"
+cask "copilot-cli"
+
+# ExpressVPN is intentionally manual: its privileged GUI helper can fail when
+# invoked non-interactively and would otherwise make this phase report failure.

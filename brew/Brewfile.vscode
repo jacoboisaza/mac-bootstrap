@@ -1,0 +1,16 @@
+# Current VS Code includes Copilot Chat. Legacy github.copilot* marketplace
+# entries are intentionally excluded because they can downgrade the built-in.
+vscode "anthropic.claude-code"
+vscode "charliermarsh.ruff"
+vscode "dbaeumer.vscode-eslint"
+vscode "eamodio.gitlens"
+vscode "editorconfig.editorconfig"
+vscode "esbenp.prettier-vscode"
+vscode "ms-azuretools.vscode-docker"
+vscode "ms-playwright.playwright"
+vscode "ms-python.debugpy"
+vscode "ms-python.python"
+vscode "ms-python.vscode-pylance"
+vscode "ms-python.vscode-python-envs"
+vscode "redhat.vscode-yaml"
+vscode "vue.volar"

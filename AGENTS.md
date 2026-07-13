@@ -11,8 +11,9 @@ This repository configures a real developer workstation. Treat it as production 
 5. Run `./setup --dry-run` before applying changes.
 6. Never print, copy, commit, or request secret values.
 7. Back up an existing configuration file before replacing or linking it.
-8. Apply the smallest relevant phase; do not upgrade unrelated packages.
-9. Run `./doctor` and report passed, failed, manual, and skipped checks.
+8. Apply the smallest relevant phase with `./setup --only <phase>`; do not upgrade unrelated packages.
+9. Preserve and cite the timestamped log when diagnosing a failed phase.
+10. Run `./doctor` and report passed, failed, warning, and manual checks.
 
 ## Prohibited without explicit user approval
 

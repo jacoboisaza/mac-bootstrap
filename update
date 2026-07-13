@@ -2,10 +2,48 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-echo "This intentionally upgrades declared Homebrew packages and applications."
+export DRY_RUN=0
+source "$ROOT_DIR/scripts/lib.sh"
+
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+else
+  echo "Homebrew is unavailable; run ./setup first." >&2
+  exit 1
+fi
+
+mkdir -p "$ROOT_DIR/logs"
+LOG_FILE="$ROOT_DIR/logs/update-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+cat <<EOF
+This intentionally updates Homebrew metadata and upgrades declared packages.
+Pinned Python, Node.js, pnpm, Gemini CLI, and Oh My Zsh versions do not change
+until config/versions.env changes.
+
+Log: $LOG_FILE
+EOF
 read -r -p "Continue? [y/N] " answer
 [[ "$answer" =~ ^[Yy]$ ]] || exit 0
-brew update
-brew bundle install --file="$ROOT_DIR/Brewfile"
-brew cleanup
-"$ROOT_DIR/doctor"
+
+run_progress "Homebrew metadata" brew update
+run_progress "Required Homebrew tools" \
+  brew bundle install --file="$ROOT_DIR/brew/Brewfile.core" --verbose
+
+warnings=0
+run_progress "Applications and agent CLIs" \
+  brew bundle install --file="$ROOT_DIR/brew/Brewfile.apps" --verbose \
+  || warnings=$((warnings+1))
+run_progress "VS Code extensions" \
+  brew bundle install --file="$ROOT_DIR/brew/Brewfile.vscode" --verbose \
+  || warnings=$((warnings+1))
+
+"$ROOT_DIR/setup" --yes --only shell
+"$ROOT_DIR/setup" --yes --only runtimes
+"$ROOT_DIR/doctor" || warnings=$((warnings+1))
+
+if [[ "$warnings" -gt 0 ]]; then
+  echo "Update completed with $warnings warning(s); review $LOG_FILE" >&2
+  exit 2
+fi
+echo "Update complete."
