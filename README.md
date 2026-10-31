@@ -8,8 +8,9 @@ Reproducible Apple Silicon macOS workstation configuration for software developm
 - `uv` owns Python installations; Homebrew does not install Python.
 - `uv` also installs graphify as a version-pinned command-line tool.
 - Volta owns Node.js and pnpm.
-- Claude Code uses Anthropic's native installer and then updates itself on the
-  channel set in `config/versions.sh`.
+- Claude Code uses Anthropic's native installer. Like Homebrew's own installer,
+  it is not pinned: `config/versions.sh` picks the channel of the first install,
+  and Claude Code updates itself after that.
 - Dotfiles are symlinked only after any existing file is backed up.
 - Authentication and secrets remain interactive and outside this repository.
 - Every phase is safe to run again.
@@ -72,19 +73,20 @@ Before erasing a Mac it set up, save what exists only on that Mac:
 
 1. Branches with unpushed commits and stashes in every repository: push them or
    keep a `git bundle`.
-2. Folders outside Git and each project's `.env` files. They never go in this
-   repository.
-3. The `~/.claude` files: `CLAUDE.md`, any baseline files, `settings.json`, and
-   the `projects/*/memory` folders. Copy `settings.json` as a file; it can hold
-   tokens. Memory folder names follow each checkout's path, so restore the same
-   user name and checkout paths.
+2. Folders outside Git, `~/.zshrc.local`, and each project's `.env` files. They
+   never go in this repository.
+3. The `~/.claude` files: `CLAUDE.md`, the baseline files it imports,
+   `settings.json`, and the `projects/*/memory` folders. Copy `settings.json` as
+   a file; it can hold tokens. Memory folder names follow each checkout's path,
+   so restore the same user name and checkout paths. Skills and plugins synced
+   from the account return when Claude Code signs in.
 4. SSH keys, or a plan to create new ones and authorize them on every server.
-5. Docker Desktop resources (Settings > Resources), to set them again.
-6. Any machine role this repository does not manage, such as a self-hosted CI
-   runner, restored from its own private runbook.
+5. Docker Desktop resources (Settings > Resources) and the registries you
+   `docker login` to.
+6. Any machine role this repository does not manage, such as a CI runner,
+   restored from its own private runbook.
 
-Do not copy Docker volumes that hold production data; restore them from their
-source instead.
+Docker volumes are not copied; recreate their data from its source.
 
 ## Version policy
 

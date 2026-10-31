@@ -18,8 +18,8 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 
 cat <<EOF
 This intentionally updates Homebrew metadata and upgrades declared packages.
-Pinned Python, Node.js, pnpm, Gemini CLI, and Oh My Zsh versions do not change
-until config/versions.sh changes.
+Pinned Python, Node.js, pnpm, Gemini CLI, graphify, and Oh My Zsh versions do
+not change until config/versions.sh changes.
 
 Log: $LOG_FILE
 EOF
