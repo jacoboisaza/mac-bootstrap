@@ -1,8 +1,8 @@
 # First-run runtime channels. setup resolves these once and writes exact patches
 # to config/runtime-lock.sh; commit that generated lock for future Macs.
-NODE_VERSION=22
+NODE_VERSION=24
 PNPM_VERSION=10
-PYTHON_VERSIONS="3.12 3.13"
+PYTHON_VERSIONS="3.10 3.12 3.13 3.14"
 GLOBAL_PYTHON_VERSION=3.13
 # Gemini CLI is installed through Volta so Homebrew does not own a second Node.js.
 # Review migration to antigravity-cli before Gemini CLI's planned deprecation.

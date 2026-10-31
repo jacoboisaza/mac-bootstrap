@@ -71,7 +71,7 @@ Homebrew is intentionally rolling-release and has no Brewfile lockfile. Runtime
 versions are declared in `config/versions.sh`; projects should additionally
 commit `.python-version`, `uv.lock`, `package.json`, and `pnpm-lock.yaml`.
 
-On the first runtime phase, channel selections such as Node 22 and Python 3.13
+On the first runtime phase, channel selections such as Node 24 and Python 3.13
 are resolved to exact patch versions and written to `config/runtime-lock.sh`.
 Commit that generated file. Later Macs source it automatically and reproduce the
 same Node, pnpm, Python, and Gemini CLI versions. To intentionally refresh the
