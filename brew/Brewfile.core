@@ -12,7 +12,7 @@ brew "gnu-sed"
 brew "htop"
 brew "httpie"
 brew "jq"
-brew "openssl@3", link: true
+brew "openssl@4"
 brew "pre-commit"
 brew "redis"
 brew "ripgrep"
