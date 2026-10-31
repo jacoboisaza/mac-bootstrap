@@ -113,7 +113,6 @@ fi
 check_link "$HOME/.zprofile" "$ROOT_DIR/dotfiles/zprofile"
 check_link "$HOME/.zshrc" "$ROOT_DIR/dotfiles/zshrc"
 check_link "$HOME/.config/starship.toml" "$ROOT_DIR/dotfiles/starship.toml"
-check_link "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "$ROOT_DIR/dotfiles/ghostty-config"
 check_link "$HOME/Library/Application Support/Code/User/settings.json" "$ROOT_DIR/config/vscode-settings.json"
 
 docker info >/dev/null 2>&1 && ok "Docker engine" || manual "Open Docker Desktop and finish setup"

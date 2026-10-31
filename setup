@@ -236,7 +236,6 @@ if should_run dotfiles; then
   backup_and_link "$ROOT_DIR/dotfiles/zprofile" "$HOME/.zprofile" "$backup"
   backup_and_link "$ROOT_DIR/dotfiles/zshrc" "$HOME/.zshrc" "$backup"
   backup_and_link "$ROOT_DIR/dotfiles/starship.toml" "$HOME/.config/starship.toml" "$backup"
-  backup_and_link "$ROOT_DIR/dotfiles/ghostty-config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "$backup"
   backup_and_link "$ROOT_DIR/config/vscode-settings.json" "$HOME/Library/Application Support/Code/User/settings.json" "$backup"
 fi
 
