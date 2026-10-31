@@ -5,6 +5,8 @@ Reproducible Apple Silicon macOS workstation configuration for software developm
 ## Design
 
 - `Brewfile` declares command-line tools and desktop applications.
+- git, jq, and timeout come with macOS and its Command Line Tools; Homebrew
+  does not duplicate them.
 - `uv` owns Python installations; Homebrew does not install Python.
 - `uv` also installs graphify as a version-pinned command-line tool.
 - Volta owns Node.js and pnpm.
@@ -60,7 +62,8 @@ being configured. Normal runs write timestamped output under `logs/`.
 1. Sign in to the Mac and enable FileVault.
 2. Run the one-command Stage 0 from `STAGE0.md`.
 3. Stage 0 installs Command Line Tools, clones the repository, and starts `setup`.
-4. Authenticate GitHub with `gh auth login`; repositories are cloned over HTTPS.
+4. Authenticate GitHub with `gh auth login`, then run `gh auth setup-git` so Git
+   reaches GitHub over HTTPS through `gh`.
 5. Open Docker Desktop once and accept its privileged helper installation.
 6. Sign in manually to VPN, messaging, AI, and Apple services.
 7. Run `./doctor` and resolve any warnings.

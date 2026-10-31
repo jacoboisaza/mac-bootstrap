@@ -1,13 +1,10 @@
 # Required command-line foundation
 brew "bash"
 brew "bat"
-brew "coreutils"
 brew "eza"
 brew "fd"
 brew "gh"
-brew "git"
 brew "gnu-sed"
-brew "jq"
 brew "openssl@4"
 brew "pre-commit"
 brew "redis"

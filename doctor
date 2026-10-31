@@ -111,6 +111,8 @@ check_link "$HOME/Library/Application Support/Code/User/settings.json" "$ROOT_DI
 
 docker info >/dev/null 2>&1 && ok "Docker engine" || manual "Open Docker Desktop and finish setup"
 gh auth status >/dev/null 2>&1 && ok "GitHub authentication" || manual "Run: gh auth login"
+[[ "$(git config --get-urlmatch credential.helper https://github.com)" == *"gh auth git-credential"* ]] \
+  && ok "Git uses gh for GitHub" || manual "Run: gh auth setup-git"
 [[ -n "$(git config --global user.name)" && -n "$(git config --global user.email)" ]] \
   && ok "Git identity" \
   || manual "Run: git config --global user.name \"Your Name\"; git config --global user.email you@example.com"
