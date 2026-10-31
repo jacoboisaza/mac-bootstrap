@@ -226,7 +226,9 @@ if should_run runtimes; then
     GLOBAL_PYTHON_VERSION="$resolved_global"
   fi
   run uv python pin --global "$GLOBAL_PYTHON_VERSION"
-  run_progress "graphify $GRAPHIFY_VERSION" uv tool install "graphifyy[sql]==$GRAPHIFY_VERSION"
+  if ! run_progress "graphify $GRAPHIFY_VERSION" uv tool install "graphifyy[sql]==$GRAPHIFY_VERSION"; then
+    WARNINGS+=("graphify failed to install; review the log and rerun --only runtimes")
+  fi
 fi
 
 if should_run dotfiles; then
