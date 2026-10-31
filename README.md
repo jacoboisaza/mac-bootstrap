@@ -65,6 +65,27 @@ being configured. Normal runs write timestamped output under `logs/`.
 7. Sign in manually to VPN, messaging, AI, and Apple services.
 8. Run `./doctor` and resolve any warnings.
 
+## Rebuilding a Mac that is in use
+
+Stage 0 restores only what this repository declares and what is pushed to it.
+Before erasing a Mac it set up, save what exists only on that Mac:
+
+1. Branches with unpushed commits and stashes in every repository: push them or
+   keep a `git bundle`.
+2. Folders outside Git and each project's `.env` files. They never go in this
+   repository.
+3. The `~/.claude` files: `CLAUDE.md`, any baseline files, `settings.json`, and
+   the `projects/*/memory` folders. Copy `settings.json` as a file; it can hold
+   tokens. Memory folder names follow each checkout's path, so restore the same
+   user name and checkout paths.
+4. SSH keys, or a plan to create new ones and authorize them on every server.
+5. Docker Desktop resources (Settings > Resources), to set them again.
+6. Any machine role this repository does not manage, such as a self-hosted CI
+   runner, restored from its own private runbook.
+
+Do not copy Docker volumes that hold production data; restore them from their
+source instead.
+
 ## Version policy
 
 Homebrew is intentionally rolling-release and has no Brewfile lockfile. Runtime
