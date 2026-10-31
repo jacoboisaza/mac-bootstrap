@@ -65,11 +65,11 @@ being configured. Normal runs write timestamped output under `logs/`.
 ## Version policy
 
 Homebrew is intentionally rolling-release and has no Brewfile lockfile. Runtime
-versions are declared in `config/versions.env`; projects should additionally
+versions are declared in `config/versions.sh`; projects should additionally
 commit `.python-version`, `uv.lock`, `package.json`, and `pnpm-lock.yaml`.
 
 On the first runtime phase, channel selections such as Node 22 and Python 3.13
-are resolved to exact patch versions and written to `config/runtime-lock.env`.
+are resolved to exact patch versions and written to `config/runtime-lock.sh`.
 Commit that generated file. Later Macs source it automatically and reproduce the
 same Node, pnpm, Python, and Gemini CLI versions. To intentionally refresh the
 lock, remove it in a reviewed commit, change channels if desired, and rerun the
@@ -80,7 +80,7 @@ Homebrew state is separated into `brew/Brewfile.core`, `brew/Brewfile.apps`, and
 The root `Brewfile` aggregates all three for standard `brew bundle` commands.
 
 Oh My Zsh is cloned directly and checked out at the exact reviewed commit in
-`config/versions.env`. Its own automatic updater is disabled; updates are made
+`config/versions.sh`. Its own automatic updater is disabled; updates are made
 by intentionally changing that pin.
 
 Gemini CLI is version-pinned through Volta to avoid Homebrew installing a second

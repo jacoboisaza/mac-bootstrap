@@ -37,8 +37,8 @@ case "$ONLY" in
 esac
 
 source "$ROOT_DIR/scripts/lib.sh"
-source "$ROOT_DIR/config/versions.env"
-RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.env"
+source "$ROOT_DIR/config/versions.sh"
+RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.sh"
 RUNTIME_LOCK_PRESENT=0
 if [[ -f "$RUNTIME_LOCK_FILE" ]]; then
   source "$RUNTIME_LOCK_FILE"
@@ -194,7 +194,7 @@ if should_run runtimes; then
       printf 'GEMINI_CLI_VERSION=%q\n' "$GEMINI_CLI_VERSION"
     } > "$RUNTIME_LOCK_FILE"
     echo "Generated exact runtime lock: $RUNTIME_LOCK_FILE"
-    echo "Commit config/runtime-lock.env after verification."
+    echo "Commit config/runtime-lock.sh after verification."
     NODE_VERSION="$resolved_node"
     PNPM_VERSION="$resolved_pnpm"
     PYTHON_VERSIONS="$resolved_pythons"

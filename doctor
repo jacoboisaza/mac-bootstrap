@@ -2,8 +2,8 @@
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "$ROOT_DIR/config/versions.env"
-RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.env"
+source "$ROOT_DIR/config/versions.sh"
+RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.sh"
 runtime_locked=0
 if [[ -f "$RUNTIME_LOCK_FILE" ]]; then
   source "$RUNTIME_LOCK_FILE"
@@ -75,12 +75,12 @@ if command -v gemini >/dev/null 2>&1; then
 fi
 
 if [[ "$runtime_locked" == "1" ]] && \
-   git -C "$ROOT_DIR" ls-files --error-unmatch config/runtime-lock.env >/dev/null 2>&1; then
+   git -C "$ROOT_DIR" ls-files --error-unmatch config/runtime-lock.sh >/dev/null 2>&1; then
   ok "Exact runtime lock committed"
 elif [[ "$runtime_locked" == "1" ]]; then
-  caution "Exact runtime lock generated but not committed: config/runtime-lock.env"
+  caution "Exact runtime lock generated but not committed: config/runtime-lock.sh"
 else
-  caution "Exact runtime lock missing; run ./setup --only runtimes and commit config/runtime-lock.env"
+  caution "Exact runtime lock missing; run ./setup --only runtimes and commit config/runtime-lock.sh"
 fi
 if command -v uv >/dev/null 2>&1; then
   for version in $PYTHON_VERSIONS; do

@@ -9,6 +9,7 @@ bash -n \
   "$ROOT_DIR/doctor" \
   "$ROOT_DIR/update" \
   "$ROOT_DIR/snapshot" \
+  "$ROOT_DIR"/config/*.sh \
   "$ROOT_DIR"/scripts/*.sh
 
 if command -v node >/dev/null 2>&1; then
