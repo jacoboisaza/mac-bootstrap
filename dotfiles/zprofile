@@ -9,3 +9,5 @@ fi
 
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
+# Claude Code's native install and uv tools, ahead of /opt/homebrew/bin.
+export PATH="$HOME/.local/bin:$PATH"
