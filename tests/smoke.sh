@@ -30,10 +30,12 @@ for expected in \
   "install Homebrew" \
   "Required Homebrew tools" \
   "Desktop applications" \
+  "Claude Code" \
   "VS Code extensions" \
   "Oh My Zsh" \
   "Node.js" \
   "Python" \
+  "graphify" \
   "macos-defaults.sh" \
   "doctor"
 do
