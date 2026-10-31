@@ -24,6 +24,11 @@ fi
 
 if [[ -d "$ROOT_DIR/.git" ]]; then
   git -C "$ROOT_DIR" diff --check
+  # Agent permission rules block .env files, so version pins live in config/*.sh.
+  if [[ -n "$(git -C "$ROOT_DIR" ls-files 'config/*.env')" ]]; then
+    echo "Tracked config/*.env files: move their values to config/*.sh" >&2
+    exit 1
+  fi
 fi
 
 output="$(PATH="$ROOT_DIR/tests/stubs:$PATH" "$ROOT_DIR/setup" --dry-run)"
