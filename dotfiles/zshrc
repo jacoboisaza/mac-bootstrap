@@ -21,3 +21,10 @@ alias k="kubectl"
 alias dc="docker compose"
 
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/isaza/.lmstudio/bin"
+# End of LM Studio CLI section
+
+# Claude Code native install (latest channel) — must precede /opt/homebrew/bin
+export PATH="$HOME/.local/bin:$PATH"

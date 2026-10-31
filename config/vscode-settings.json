@@ -20,5 +20,11 @@
   },
   "[vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "terminal.integrated.initialHint": false,
+  "git.confirmSync": false,
+  "network.meteredConnection": "off",
+  "claudeCode.hideOnboarding": true,
+  "git.replaceTagsWhenPull": true,
+  "claudeCode.focusView": true
 }
