@@ -56,7 +56,7 @@ else
   bad "Homebrew environment"
 fi
 
-for cmd in git gh uv volta node pnpm docker helm kind skopeo actionlint gitleaks starship code codex claude gemini copilot graphify; do
+for cmd in git gh uv volta node pnpm docker helm kind skopeo actionlint gitleaks starship code codex claude copilot graphify; do
   check_command "$cmd"
 done
 
@@ -73,12 +73,6 @@ fi
 if command -v pnpm >/dev/null 2>&1; then
   [[ "$(pnpm --version)" == "${PNPM_VERSION}" || "$(pnpm --version)" == ${PNPM_VERSION}.* ]] \
     && ok "pnpm $PNPM_VERSION" || bad "pnpm expected $PNPM_VERSION, found $(pnpm --version)"
-fi
-if command -v gemini >/dev/null 2>&1; then
-  gemini_version="$(gemini --version 2>/dev/null | tail -n 1)"
-  [[ "$gemini_version" == *"$GEMINI_CLI_VERSION"* ]] \
-    && ok "Gemini CLI $GEMINI_CLI_VERSION" \
-    || bad "Gemini CLI expected $GEMINI_CLI_VERSION, found ${gemini_version:-unknown}"
 fi
 if command -v graphify >/dev/null 2>&1; then
   graphify_version="$(graphify --version 2>/dev/null)"

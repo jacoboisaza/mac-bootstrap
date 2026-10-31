@@ -191,7 +191,6 @@ if should_run runtimes; then
   fi
   run_progress "Node.js $NODE_VERSION" volta install "node@$NODE_VERSION"
   run_progress "pnpm $PNPM_VERSION" volta install "pnpm@$PNPM_VERSION"
-  run_progress "Gemini CLI $GEMINI_CLI_VERSION" volta install "@google/gemini-cli@$GEMINI_CLI_VERSION"
   for version in $PYTHON_VERSIONS; do
     run_progress "Python $version" uv python install "$version"
   done
@@ -216,7 +215,6 @@ if should_run runtimes; then
       printf 'PNPM_VERSION=%q\n' "$resolved_pnpm"
       printf 'PYTHON_VERSIONS=%q\n' "$resolved_pythons"
       printf 'GLOBAL_PYTHON_VERSION=%q\n' "$resolved_global"
-      printf 'GEMINI_CLI_VERSION=%q\n' "$GEMINI_CLI_VERSION"
     } > "$RUNTIME_LOCK_FILE"
     echo "Generated exact runtime lock: $RUNTIME_LOCK_FILE"
     echo "Commit config/runtime-lock.sh after verification."

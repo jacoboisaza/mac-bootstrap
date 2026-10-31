@@ -96,9 +96,8 @@ commit `.python-version`, `uv.lock`, `package.json`, and `pnpm-lock.yaml`.
 On the first runtime phase, channel selections such as Node 24 and Python 3.13
 are resolved to exact patch versions and written to `config/runtime-lock.sh`.
 Commit that generated file. Later Macs source it automatically and reproduce the
-same Node, pnpm, Python, and Gemini CLI versions. To intentionally refresh the
-lock, remove it in a reviewed commit, change channels if desired, and rerun the
-runtime phase.
+same Node, pnpm, and Python versions. To intentionally refresh the lock, remove
+it in a reviewed commit, change channels if desired, and rerun the runtime phase.
 
 Homebrew state is separated into `brew/Brewfile.core`, `brew/Brewfile.apps`, and
 `brew/Brewfile.vscode` so optional installers cannot block the required toolchain.
@@ -107,10 +106,6 @@ The root `Brewfile` aggregates all three for standard `brew bundle` commands.
 Oh My Zsh is cloned directly and checked out at the exact reviewed commit in
 `config/versions.sh`. Its own automatic updater is disabled; updates are made
 by intentionally changing that pin.
-
-Gemini CLI is version-pinned through Volta to avoid Homebrew installing a second
-Node.js. Its upstream Homebrew formula is scheduled for deprecation in favor of
-Antigravity CLI, so that migration should be reviewed during a future update.
 
 ## Safety
 

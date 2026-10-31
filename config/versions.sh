@@ -4,9 +4,6 @@ NODE_VERSION=24
 PNPM_VERSION=10
 PYTHON_VERSIONS="3.10 3.12 3.13 3.14"
 GLOBAL_PYTHON_VERSION=3.13
-# Gemini CLI is installed through Volta so Homebrew does not own a second Node.js.
-# Review migration to antigravity-cli before Gemini CLI's planned deprecation.
-GEMINI_CLI_VERSION=0.46.0
 # graphify (PyPI package graphifyy) is installed as a uv tool at this exact version.
 GRAPHIFY_VERSION=0.9.44
 # Claude Code uses Anthropic's native installer, then updates itself on this
