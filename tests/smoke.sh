@@ -41,7 +41,9 @@ for expected in \
   "Oh My Zsh" \
   "Node.js" \
   "Python" \
+  "Default python3" \
   "graphify" \
+  "pre-commit" \
   "macos-defaults.sh" \
   "doctor"
 do
