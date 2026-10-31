@@ -8,7 +8,8 @@ Reproducible Apple Silicon macOS workstation configuration for software developm
 - git, jq, and timeout come with macOS and its Command Line Tools; Homebrew
   does not duplicate them.
 - `uv` owns Python installations; Homebrew does not install Python.
-- `uv` also installs graphify as a version-pinned command-line tool.
+- `uv` also installs graphify and pre-commit as version-pinned tools, and its
+  global Python is the default `python3`.
 - Volta owns Node.js and pnpm.
 - Claude Code uses Anthropic's native installer. Like Homebrew's own installer,
   it is not pinned: `config/versions.sh` picks the channel of the first install,

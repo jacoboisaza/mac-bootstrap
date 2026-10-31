@@ -6,6 +6,8 @@ PYTHON_VERSIONS="3.10 3.12 3.13 3.14"
 GLOBAL_PYTHON_VERSION=3.13
 # graphify (PyPI package graphifyy) is installed as a uv tool at this exact version.
 GRAPHIFY_VERSION=0.9.44
+# pre-commit is a uv tool too, so Homebrew never installs a Python for it.
+PRE_COMMIT_VERSION=4.7.0
 # Claude Code uses Anthropic's native installer, then updates itself on this
 # channel (stable or latest).
 CLAUDE_CODE_CHANNEL=latest

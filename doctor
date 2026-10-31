@@ -56,7 +56,7 @@ else
   bad "Homebrew environment"
 fi
 
-for cmd in git gh uv volta node pnpm docker helm kind skopeo actionlint gitleaks starship code codex claude copilot graphify; do
+for cmd in git gh uv volta node pnpm docker helm kind skopeo actionlint gitleaks starship code codex claude copilot graphify pre-commit; do
   check_command "$cmd"
 done
 
@@ -79,6 +79,18 @@ if command -v graphify >/dev/null 2>&1; then
   [[ "$graphify_version" == "graphify $GRAPHIFY_VERSION" ]] \
     && ok "graphify $GRAPHIFY_VERSION" \
     || bad "graphify expected $GRAPHIFY_VERSION, found ${graphify_version:-unknown}"
+fi
+if command -v pre-commit >/dev/null 2>&1; then
+  pre_commit_version="$(pre-commit --version 2>/dev/null)"
+  [[ "$pre_commit_version" == "pre-commit $PRE_COMMIT_VERSION" ]] \
+    && ok "pre-commit $PRE_COMMIT_VERSION" \
+    || bad "pre-commit expected $PRE_COMMIT_VERSION, found ${pre_commit_version:-unknown}"
+fi
+if command -v python3 >/dev/null 2>&1; then
+  python3_version="$(python3 --version 2>&1)"
+  [[ "$python3_version" == "Python $GLOBAL_PYTHON_VERSION" || "$python3_version" == "Python $GLOBAL_PYTHON_VERSION".* ]] \
+    && ok "python3 is Python $GLOBAL_PYTHON_VERSION" \
+    || bad "python3 expected $GLOBAL_PYTHON_VERSION, found ${python3_version:-unknown}"
 fi
 
 if [[ "$runtime_locked" == "1" ]] && \

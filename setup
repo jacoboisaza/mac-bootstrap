@@ -224,8 +224,12 @@ if should_run runtimes; then
     GLOBAL_PYTHON_VERSION="$resolved_global"
   fi
   run uv python pin --global "$GLOBAL_PYTHON_VERSION"
+  run_progress "Default python3 $GLOBAL_PYTHON_VERSION" uv python install --default "$GLOBAL_PYTHON_VERSION"
   if ! run_progress "graphify $GRAPHIFY_VERSION" uv tool install "graphifyy[sql]==$GRAPHIFY_VERSION"; then
     WARNINGS+=("graphify failed to install; review the log and rerun --only runtimes")
+  fi
+  if ! run_progress "pre-commit $PRE_COMMIT_VERSION" uv tool install "pre-commit==$PRE_COMMIT_VERSION"; then
+    WARNINGS+=("pre-commit failed to install; review the log and rerun --only runtimes")
   fi
 fi
 
