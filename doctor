@@ -59,6 +59,12 @@ for cmd in git gh uv volta node pnpm docker kubectl helm kind k9s skopeo actionl
   check_command "$cmd"
 done
 
+claude_path="$(command -v claude 2>/dev/null)"
+[[ -z "$claude_path" || "$claude_path" == "$HOME/.local/bin/claude" ]] \
+  || caution "claude resolves to $claude_path; setup installs it at $HOME/.local/bin/claude"
+command -v brew >/dev/null 2>&1 && brew list --cask claude-code >/dev/null 2>&1 \
+  && caution "A second Claude Code comes from the claude-code cask; remove it: brew uninstall --cask claude-code"
+
 if command -v node >/dev/null 2>&1; then
   [[ "$(node --version)" == "v${NODE_VERSION}" || "$(node --version)" == v${NODE_VERSION}.* ]] \
     && ok "Node.js $NODE_VERSION" || bad "Node.js expected $NODE_VERSION, found $(node --version)"

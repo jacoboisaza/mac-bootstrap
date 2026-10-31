@@ -149,12 +149,12 @@ install_claude_code() {
     return 0
   fi
   installer="$(mktemp)" || return 1
-  if ! curl -fsSL https://claude.ai/install.sh -o "$installer"; then
+  if ! curl --proto '=https' --tlsv1.2 --retry 3 --max-time 120 -fsSL \
+    https://claude.ai/install.sh -o "$installer"; then
     rm -f "$installer"
     return 1
   fi
-  bash "$installer" "$CLAUDE_CODE_CHANNEL"
-  status=$?
+  if bash "$installer" "$CLAUDE_CODE_CHANNEL"; then status=0; else status=$?; fi
   rm -f "$installer"
   return "$status"
 }
