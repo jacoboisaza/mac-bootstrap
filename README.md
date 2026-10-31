@@ -60,11 +60,10 @@ being configured. Normal runs write timestamped output under `logs/`.
 1. Sign in to the Mac and enable FileVault.
 2. Run the one-command Stage 0 from `STAGE0.md`.
 3. Stage 0 installs Command Line Tools, clones the repository, and starts `setup`.
-4. Optionally authenticate GitHub with `gh auth login`.
-5. Create a unique SSH key with `./scripts/github-ssh.sh` and add it to GitHub.
-6. Open Docker Desktop once and accept its privileged helper installation.
-7. Sign in manually to VPN, messaging, AI, and Apple services.
-8. Run `./doctor` and resolve any warnings.
+4. Authenticate GitHub with `gh auth login`; repositories are cloned over HTTPS.
+5. Open Docker Desktop once and accept its privileged helper installation.
+6. Sign in manually to VPN, messaging, AI, and Apple services.
+7. Run `./doctor` and resolve any warnings.
 
 ## Rebuilding a Mac that is in use
 
