@@ -15,7 +15,8 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
-export PATH="$HOME/.local/bin:$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
+# Docker Desktop's CLI lives in /usr/local/bin or ~/.docker/bin, outside SSH's minimal PATH.
+export PATH="$HOME/.local/bin:$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH:/usr/local/bin:$HOME/.docker/bin"
 
 pass=0; fail=0; warnings=0; manuals=0
 ok() { printf 'PASS    %s\n' "$1"; pass=$((pass+1)); }
@@ -117,8 +118,9 @@ check_link "$HOME/Library/Application Support/Code/User/settings.json" "$ROOT_DI
 
 docker info >/dev/null 2>&1 && ok "Docker engine" || manual "Open Docker Desktop and finish setup"
 gh auth status >/dev/null 2>&1 && ok "GitHub authentication" || manual "Run: gh auth login"
-[[ -n "$(git config --global user.email)" ]] \
-  && ok "Git identity" || manual "Run: git config --global user.name and user.email"
+[[ -n "$(git config --global user.name)" && -n "$(git config --global user.email)" ]] \
+  && ok "Git identity" \
+  || manual "Run: git config --global user.name \"Your Name\"; git config --global user.email you@example.com"
 command -v tailscale >/dev/null 2>&1 && tailscale status >/dev/null 2>&1 \
   && ok "Tailscale connection" || manual "Open Tailscale and sign in"
 [[ -d "/Applications/ExpressVPN.app" ]] \
