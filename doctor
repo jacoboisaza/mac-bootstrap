@@ -56,7 +56,7 @@ else
   bad "Homebrew environment"
 fi
 
-for cmd in git gh uv volta node pnpm docker kubectl helm kind k9s skopeo actionlint gitleaks starship code codex claude gemini copilot graphify; do
+for cmd in git gh uv volta node pnpm docker helm kind skopeo actionlint gitleaks starship code codex claude gemini copilot graphify; do
   check_command "$cmd"
 done
 
