@@ -27,6 +27,10 @@ brew "watch"
 brew "wget"
 brew "yq"
 
+# Repository checks run by git hooks and test suites
+brew "actionlint"
+brew "gitleaks"
+
 # Database clients only; no services are started.
 brew "libpq", link: false
 
@@ -35,3 +39,6 @@ brew "helm"
 brew "k9s"
 brew "kind"
 brew "kubectl"
+
+# Container image registries
+brew "skopeo"
