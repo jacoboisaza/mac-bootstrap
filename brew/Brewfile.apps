@@ -22,8 +22,8 @@ cask "claude"
 cask "chatgpt"
 cask "antigravity"
 
-# AI development CLIs distributed as native binaries
-cask "claude-code"
+# AI development CLIs distributed as native binaries. Claude Code is not here:
+# setup installs it with Anthropic's native installer (config/versions.sh).
 cask "codex"
 cask "copilot-cli"
 

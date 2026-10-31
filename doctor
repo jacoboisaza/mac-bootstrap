@@ -15,7 +15,7 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
-export PATH="$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
+export PATH="$HOME/.local/bin:$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
 
 pass=0; fail=0; warnings=0; manuals=0
 ok() { printf 'PASS    %s\n' "$1"; pass=$((pass+1)); }
@@ -55,7 +55,7 @@ else
   bad "Homebrew environment"
 fi
 
-for cmd in git gh uv volta node pnpm docker kubectl helm kind k9s skopeo actionlint gitleaks starship code codex claude gemini copilot; do
+for cmd in git gh uv volta node pnpm docker kubectl helm kind k9s skopeo actionlint gitleaks starship code codex claude gemini copilot graphify; do
   check_command "$cmd"
 done
 
@@ -72,6 +72,12 @@ if command -v gemini >/dev/null 2>&1; then
   [[ "$gemini_version" == *"$GEMINI_CLI_VERSION"* ]] \
     && ok "Gemini CLI $GEMINI_CLI_VERSION" \
     || bad "Gemini CLI expected $GEMINI_CLI_VERSION, found ${gemini_version:-unknown}"
+fi
+if command -v graphify >/dev/null 2>&1; then
+  graphify_version="$(graphify --version 2>/dev/null)"
+  [[ "$graphify_version" == "graphify $GRAPHIFY_VERSION" ]] \
+    && ok "graphify $GRAPHIFY_VERSION" \
+    || bad "graphify expected $GRAPHIFY_VERSION, found ${graphify_version:-unknown}"
 fi
 
 if [[ "$runtime_locked" == "1" ]] && \

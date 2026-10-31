@@ -6,7 +6,10 @@ Reproducible Apple Silicon macOS workstation configuration for software developm
 
 - `Brewfile` declares command-line tools and desktop applications.
 - `uv` owns Python installations; Homebrew does not install Python.
+- `uv` also installs graphify as a version-pinned command-line tool.
 - Volta owns Node.js and pnpm.
+- Claude Code uses Anthropic's native installer and then updates itself on the
+  channel set in `config/versions.sh`.
 - Dotfiles are symlinked only after any existing file is backed up.
 - Authentication and secrets remain interactive and outside this repository.
 - Every phase is safe to run again.

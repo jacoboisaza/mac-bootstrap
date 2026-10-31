@@ -103,7 +103,7 @@ elif [[ "$DRY_RUN" != "1" ]]; then
   exit 1
 fi
 export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
-export PATH="$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
+export PATH="$HOME/.local/bin:$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
 
 apply_bundle() {
   local label="$1" manifest="$2"
@@ -137,6 +137,28 @@ install_oh_my_zsh() {
   git -C "$target" checkout --detach --force FETCH_HEAD
 }
 
+# The installer is downloaded first so a failed transfer never runs half a script.
+install_claude_code() {
+  local installer status
+  if [[ -x "$HOME/.local/bin/claude" ]]; then
+    echo "SATISFIED Claude Code at $HOME/.local/bin/claude"
+    return 0
+  fi
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "+ install Claude Code ($CLAUDE_CODE_CHANNEL channel) with Anthropic's native installer"
+    return 0
+  fi
+  installer="$(mktemp)" || return 1
+  if ! curl -fsSL https://claude.ai/install.sh -o "$installer"; then
+    rm -f "$installer"
+    return 1
+  fi
+  bash "$installer" "$CLAUDE_CODE_CHANNEL"
+  status=$?
+  rm -f "$installer"
+  return "$status"
+}
+
 if should_run packages; then
   apply_bundle "Required Homebrew tools" "$ROOT_DIR/brew/Brewfile.core"
 fi
@@ -144,6 +166,9 @@ fi
 if should_run apps; then
   if ! apply_bundle "Desktop applications" "$ROOT_DIR/brew/Brewfile.apps"; then
     WARNINGS+=("Some applications or agent CLIs failed; review the log and rerun --only apps")
+  fi
+  if ! run_progress "Claude Code ($CLAUDE_CODE_CHANNEL channel)" install_claude_code; then
+    WARNINGS+=("Claude Code's native installer failed; review the log and rerun --only apps")
   fi
 fi
 
@@ -201,6 +226,7 @@ if should_run runtimes; then
     GLOBAL_PYTHON_VERSION="$resolved_global"
   fi
   run uv python pin --global "$GLOBAL_PYTHON_VERSION"
+  run_progress "graphify $GRAPHIFY_VERSION" uv tool install "graphifyy[sql]==$GRAPHIFY_VERSION"
 fi
 
 if should_run dotfiles; then
