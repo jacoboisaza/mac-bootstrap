@@ -26,6 +26,3 @@ cask "antigravity"
 # setup installs it with Anthropic's native installer (config/versions.sh).
 cask "codex"
 cask "copilot-cli"
-
-# ExpressVPN is intentionally manual: its privileged GUI helper can fail when
-# invoked non-interactively and would otherwise make this phase report failure.

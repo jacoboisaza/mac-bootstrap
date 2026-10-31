@@ -123,9 +123,6 @@ Antigravity CLI, so that migration should be reviewed during a future update.
 
 ## Manual applications
 
-- ExpressVPN: download and open the official macOS installer, then approve its
-  privileged helper in the GUI. It is excluded from `Brewfile` because that
-  helper can fail under Homebrew's non-interactive cask installation.
 - GitHub Copilot in VS Code: use the current built-in Copilot Chat and sign in
   interactively. Legacy `github.copilot*` marketplace entries are excluded to
   prevent attempts to downgrade the built-in extension.
