@@ -1,6 +1,5 @@
-# Terminal and developer applications
+# Developer applications and the editor font
 cask "font-jetbrains-mono-nerd-font"
-cask "ghostty"
 cask "visual-studio-code"
 cask "postman"
 cask "dbeaver-community"
@@ -20,12 +19,8 @@ cask "spotify"
 # AI desktop applications
 cask "claude"
 cask "chatgpt"
-cask "antigravity"
 
-# AI development CLIs distributed as native binaries
-cask "claude-code"
+# AI development CLIs distributed as native binaries. Claude Code is not here:
+# setup installs it with Anthropic's native installer (config/versions.sh).
 cask "codex"
 cask "copilot-cli"
-
-# ExpressVPN is intentionally manual: its privileged GUI helper can fail when
-# invoked non-interactively and would otherwise make this phase report failure.

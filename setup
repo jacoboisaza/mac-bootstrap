@@ -37,8 +37,8 @@ case "$ONLY" in
 esac
 
 source "$ROOT_DIR/scripts/lib.sh"
-source "$ROOT_DIR/config/versions.env"
-RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.env"
+source "$ROOT_DIR/config/versions.sh"
+RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.sh"
 RUNTIME_LOCK_PRESENT=0
 if [[ -f "$RUNTIME_LOCK_FILE" ]]; then
   source "$RUNTIME_LOCK_FILE"
@@ -103,11 +103,11 @@ elif [[ "$DRY_RUN" != "1" ]]; then
   exit 1
 fi
 export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
-export PATH="$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
+export PATH="$HOME/.local/bin:$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
 
 apply_bundle() {
   local label="$1" manifest="$2"
-  if [[ "$DRY_RUN" != "1" ]] && brew bundle check --file="$manifest" >/dev/null 2>&1; then
+  if [[ "$DRY_RUN" != "1" ]] && brew bundle check --no-upgrade --file="$manifest" >/dev/null 2>&1; then
     echo "SATISFIED $label"
     return 0
   fi
@@ -137,6 +137,28 @@ install_oh_my_zsh() {
   git -C "$target" checkout --detach --force FETCH_HEAD
 }
 
+# The installer is downloaded first so a failed transfer never runs half a script.
+install_claude_code() {
+  local installer status
+  if [[ -x "$HOME/.local/bin/claude" ]]; then
+    echo "SATISFIED Claude Code at $HOME/.local/bin/claude"
+    return 0
+  fi
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "+ install Claude Code ($CLAUDE_CODE_CHANNEL channel) with Anthropic's native installer"
+    return 0
+  fi
+  installer="$(mktemp)" || return 1
+  if ! curl --proto '=https' --tlsv1.2 --retry 3 --max-time 120 -fsSL \
+    https://claude.ai/install.sh -o "$installer"; then
+    rm -f "$installer"
+    return 1
+  fi
+  if bash "$installer" "$CLAUDE_CODE_CHANNEL"; then status=0; else status=$?; fi
+  rm -f "$installer"
+  return "$status"
+}
+
 if should_run packages; then
   apply_bundle "Required Homebrew tools" "$ROOT_DIR/brew/Brewfile.core"
 fi
@@ -144,6 +166,9 @@ fi
 if should_run apps; then
   if ! apply_bundle "Desktop applications" "$ROOT_DIR/brew/Brewfile.apps"; then
     WARNINGS+=("Some applications or agent CLIs failed; review the log and rerun --only apps")
+  fi
+  if ! run_progress "Claude Code ($CLAUDE_CODE_CHANNEL channel)" install_claude_code; then
+    WARNINGS+=("Claude Code's native installer failed; review the log and rerun --only apps")
   fi
 fi
 
@@ -166,7 +191,6 @@ if should_run runtimes; then
   fi
   run_progress "Node.js $NODE_VERSION" volta install "node@$NODE_VERSION"
   run_progress "pnpm $PNPM_VERSION" volta install "pnpm@$PNPM_VERSION"
-  run_progress "Gemini CLI $GEMINI_CLI_VERSION" volta install "@google/gemini-cli@$GEMINI_CLI_VERSION"
   for version in $PYTHON_VERSIONS; do
     run_progress "Python $version" uv python install "$version"
   done
@@ -191,16 +215,24 @@ if should_run runtimes; then
       printf 'PNPM_VERSION=%q\n' "$resolved_pnpm"
       printf 'PYTHON_VERSIONS=%q\n' "$resolved_pythons"
       printf 'GLOBAL_PYTHON_VERSION=%q\n' "$resolved_global"
-      printf 'GEMINI_CLI_VERSION=%q\n' "$GEMINI_CLI_VERSION"
     } > "$RUNTIME_LOCK_FILE"
     echo "Generated exact runtime lock: $RUNTIME_LOCK_FILE"
-    echo "Commit config/runtime-lock.env after verification."
+    echo "Commit config/runtime-lock.sh after verification."
     NODE_VERSION="$resolved_node"
     PNPM_VERSION="$resolved_pnpm"
     PYTHON_VERSIONS="$resolved_pythons"
     GLOBAL_PYTHON_VERSION="$resolved_global"
   fi
   run uv python pin --global "$GLOBAL_PYTHON_VERSION"
+  # --default is a uv preview feature; opting in explicitly silences its warning.
+  run_progress "Default python3 $GLOBAL_PYTHON_VERSION" \
+    uv python install --default --preview-features python-install-default "$GLOBAL_PYTHON_VERSION"
+  if ! run_progress "graphify $GRAPHIFY_VERSION" uv tool install "graphifyy[sql]==$GRAPHIFY_VERSION"; then
+    WARNINGS+=("graphify failed to install; review the log and rerun --only runtimes")
+  fi
+  if ! run_progress "pre-commit $PRE_COMMIT_VERSION" uv tool install "pre-commit==$PRE_COMMIT_VERSION"; then
+    WARNINGS+=("pre-commit failed to install; review the log and rerun --only runtimes")
+  fi
 fi
 
 if should_run dotfiles; then
@@ -208,7 +240,6 @@ if should_run dotfiles; then
   backup_and_link "$ROOT_DIR/dotfiles/zprofile" "$HOME/.zprofile" "$backup"
   backup_and_link "$ROOT_DIR/dotfiles/zshrc" "$HOME/.zshrc" "$backup"
   backup_and_link "$ROOT_DIR/dotfiles/starship.toml" "$HOME/.config/starship.toml" "$backup"
-  backup_and_link "$ROOT_DIR/dotfiles/ghostty-config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "$backup"
   backup_and_link "$ROOT_DIR/config/vscode-settings.json" "$HOME/Library/Application Support/Code/User/settings.json" "$backup"
 fi
 

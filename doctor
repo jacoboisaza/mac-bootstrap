@@ -2,8 +2,8 @@
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "$ROOT_DIR/config/versions.env"
-RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.env"
+source "$ROOT_DIR/config/versions.sh"
+RUNTIME_LOCK_FILE="$ROOT_DIR/config/runtime-lock.sh"
 runtime_locked=0
 if [[ -f "$RUNTIME_LOCK_FILE" ]]; then
   source "$RUNTIME_LOCK_FILE"
@@ -15,7 +15,8 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
-export PATH="$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
+# Docker Desktop's CLI lives in /usr/local/bin or ~/.docker/bin, outside SSH's minimal PATH.
+export PATH="$HOME/.local/bin:$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH:/usr/local/bin:$HOME/.docker/bin"
 
 pass=0; fail=0; warnings=0; manuals=0
 ok() { printf 'PASS    %s\n' "$1"; pass=$((pass+1)); }
@@ -42,22 +43,28 @@ xcode-select -p >/dev/null 2>&1 && ok "Xcode Command Line Tools" || bad "Xcode C
 
 if command -v brew >/dev/null 2>&1; then
   ok "Homebrew environment"
-  brew bundle check --file="$ROOT_DIR/brew/Brewfile.core" >/dev/null 2>&1 \
+  brew bundle check --no-upgrade --file="$ROOT_DIR/brew/Brewfile.core" >/dev/null 2>&1 \
     && ok "Required Homebrew tools" \
     || bad "Required Homebrew tools; run ./setup --only packages"
-  brew bundle check --file="$ROOT_DIR/brew/Brewfile.apps" >/dev/null 2>&1 \
+  brew bundle check --no-upgrade --file="$ROOT_DIR/brew/Brewfile.apps" >/dev/null 2>&1 \
     && ok "Applications and agent CLIs" \
-    || caution "Applications incomplete; run brew bundle check --verbose --file=brew/Brewfile.apps"
-  brew bundle check --file="$ROOT_DIR/brew/Brewfile.vscode" >/dev/null 2>&1 \
+    || caution "Applications incomplete; run brew bundle check --no-upgrade --verbose --file=brew/Brewfile.apps"
+  brew bundle check --no-upgrade --file="$ROOT_DIR/brew/Brewfile.vscode" >/dev/null 2>&1 \
     && ok "VS Code extensions" \
     || caution "VS Code extensions incomplete; run ./setup --only vscode"
 else
   bad "Homebrew environment"
 fi
 
-for cmd in git gh uv volta node pnpm docker kubectl helm kind k9s starship code codex claude gemini copilot; do
+for cmd in git gh uv volta node pnpm docker helm kind skopeo actionlint gitleaks starship code codex claude copilot graphify pre-commit; do
   check_command "$cmd"
 done
+
+claude_path="$(command -v claude 2>/dev/null)"
+[[ -z "$claude_path" || "$claude_path" == "$HOME/.local/bin/claude" ]] \
+  || caution "claude resolves to $claude_path; setup installs it at $HOME/.local/bin/claude"
+command -v brew >/dev/null 2>&1 && brew list --cask claude-code >/dev/null 2>&1 \
+  && caution "A second Claude Code comes from the claude-code cask; remove it: brew uninstall --cask claude-code"
 
 if command -v node >/dev/null 2>&1; then
   [[ "$(node --version)" == "v${NODE_VERSION}" || "$(node --version)" == v${NODE_VERSION}.* ]] \
@@ -67,20 +74,32 @@ if command -v pnpm >/dev/null 2>&1; then
   [[ "$(pnpm --version)" == "${PNPM_VERSION}" || "$(pnpm --version)" == ${PNPM_VERSION}.* ]] \
     && ok "pnpm $PNPM_VERSION" || bad "pnpm expected $PNPM_VERSION, found $(pnpm --version)"
 fi
-if command -v gemini >/dev/null 2>&1; then
-  gemini_version="$(gemini --version 2>/dev/null | tail -n 1)"
-  [[ "$gemini_version" == *"$GEMINI_CLI_VERSION"* ]] \
-    && ok "Gemini CLI $GEMINI_CLI_VERSION" \
-    || bad "Gemini CLI expected $GEMINI_CLI_VERSION, found ${gemini_version:-unknown}"
+if command -v graphify >/dev/null 2>&1; then
+  graphify_version="$(graphify --version 2>/dev/null)"
+  [[ "$graphify_version" == "graphify $GRAPHIFY_VERSION" ]] \
+    && ok "graphify $GRAPHIFY_VERSION" \
+    || bad "graphify expected $GRAPHIFY_VERSION, found ${graphify_version:-unknown}"
+fi
+if command -v pre-commit >/dev/null 2>&1; then
+  pre_commit_version="$(pre-commit --version 2>/dev/null)"
+  [[ "$pre_commit_version" == "pre-commit $PRE_COMMIT_VERSION" ]] \
+    && ok "pre-commit $PRE_COMMIT_VERSION" \
+    || bad "pre-commit expected $PRE_COMMIT_VERSION, found ${pre_commit_version:-unknown}"
+fi
+if command -v python3 >/dev/null 2>&1; then
+  python3_version="$(python3 --version 2>&1)"
+  [[ "$python3_version" == "Python $GLOBAL_PYTHON_VERSION" || "$python3_version" == "Python $GLOBAL_PYTHON_VERSION".* ]] \
+    && ok "python3 is Python $GLOBAL_PYTHON_VERSION" \
+    || bad "python3 expected $GLOBAL_PYTHON_VERSION, found ${python3_version:-unknown}"
 fi
 
 if [[ "$runtime_locked" == "1" ]] && \
-   git -C "$ROOT_DIR" ls-files --error-unmatch config/runtime-lock.env >/dev/null 2>&1; then
+   git -C "$ROOT_DIR" ls-files --error-unmatch config/runtime-lock.sh >/dev/null 2>&1; then
   ok "Exact runtime lock committed"
 elif [[ "$runtime_locked" == "1" ]]; then
-  caution "Exact runtime lock generated but not committed: config/runtime-lock.env"
+  caution "Exact runtime lock generated but not committed: config/runtime-lock.sh"
 else
-  caution "Exact runtime lock missing; run ./setup --only runtimes and commit config/runtime-lock.env"
+  caution "Exact runtime lock missing; run ./setup --only runtimes and commit config/runtime-lock.sh"
 fi
 if command -v uv >/dev/null 2>&1; then
   for version in $PYTHON_VERSIONS; do
@@ -100,15 +119,17 @@ fi
 check_link "$HOME/.zprofile" "$ROOT_DIR/dotfiles/zprofile"
 check_link "$HOME/.zshrc" "$ROOT_DIR/dotfiles/zshrc"
 check_link "$HOME/.config/starship.toml" "$ROOT_DIR/dotfiles/starship.toml"
-check_link "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "$ROOT_DIR/dotfiles/ghostty-config"
 check_link "$HOME/Library/Application Support/Code/User/settings.json" "$ROOT_DIR/config/vscode-settings.json"
 
 docker info >/dev/null 2>&1 && ok "Docker engine" || manual "Open Docker Desktop and finish setup"
 gh auth status >/dev/null 2>&1 && ok "GitHub authentication" || manual "Run: gh auth login"
+[[ "$(git config --get-urlmatch credential.helper https://github.com)" == *"gh auth git-credential"* ]] \
+  && ok "Git uses gh for GitHub" || manual "Run: gh auth setup-git"
+[[ -n "$(git config --global user.name)" && -n "$(git config --global user.email)" ]] \
+  && ok "Git identity" \
+  || manual "Run: git config --global user.name \"Your Name\"; git config --global user.email you@example.com"
 command -v tailscale >/dev/null 2>&1 && tailscale status >/dev/null 2>&1 \
   && ok "Tailscale connection" || manual "Open Tailscale and sign in"
-[[ -d "/Applications/ExpressVPN.app" ]] \
-  && ok "ExpressVPN application" || manual "Install ExpressVPN with its official GUI installer"
 
 printf '\nSummary: %d passed, %d failed, %d warnings, %d manual\n' \
   "$pass" "$fail" "$warnings" "$manuals"

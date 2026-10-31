@@ -5,8 +5,15 @@ Reproducible Apple Silicon macOS workstation configuration for software developm
 ## Design
 
 - `Brewfile` declares command-line tools and desktop applications.
+- git, jq, and timeout come with macOS and its Command Line Tools; Homebrew
+  does not duplicate them.
 - `uv` owns Python installations; Homebrew does not install Python.
+- `uv` also installs graphify and pre-commit as version-pinned tools, and its
+  global Python is the default `python3`.
 - Volta owns Node.js and pnpm.
+- Claude Code uses Anthropic's native installer. Like Homebrew's own installer,
+  it is not pinned: `config/versions.sh` picks the channel of the first install,
+  and Claude Code updates itself after that.
 - Dotfiles are symlinked only after any existing file is backed up.
 - Authentication and secrets remain interactive and outside this repository.
 - Every phase is safe to run again.
@@ -56,36 +63,53 @@ being configured. Normal runs write timestamped output under `logs/`.
 1. Sign in to the Mac and enable FileVault.
 2. Run the one-command Stage 0 from `STAGE0.md`.
 3. Stage 0 installs Command Line Tools, clones the repository, and starts `setup`.
-4. Optionally authenticate GitHub with `gh auth login`.
-5. Create a unique SSH key with `./scripts/github-ssh.sh` and add it to GitHub.
-6. Open Docker Desktop once and accept its privileged helper installation.
-7. Sign in manually to VPN, messaging, AI, and Apple services.
-8. Run `./doctor` and resolve any warnings.
+4. Authenticate GitHub with `gh auth login`, then run `gh auth setup-git` so Git
+   reaches GitHub over HTTPS through `gh`.
+5. Open Docker Desktop once and accept its privileged helper installation.
+6. Sign in manually to VPN, messaging, AI, and Apple services.
+7. Run `./doctor` and resolve any warnings.
+
+## Rebuilding a Mac that is in use
+
+Stage 0 restores only what this repository declares and what is pushed to it.
+Before erasing a Mac it set up, save what exists only on that Mac:
+
+1. Branches with unpushed commits and stashes in every repository: push them or
+   keep a `git bundle`.
+2. Folders outside Git, `~/.zshrc.local`, and each project's `.env` files. They
+   never go in this repository.
+3. The `~/.claude` files: `CLAUDE.md`, the baseline files it imports,
+   `settings.json`, and the `projects/*/memory` folders. Copy `settings.json` as
+   a file; it can hold tokens. Memory folder names follow each checkout's path,
+   so restore the same user name and checkout paths. Skills and plugins synced
+   from the account return when Claude Code signs in.
+4. SSH keys, or a plan to create new ones and authorize them on every server.
+5. Docker Desktop resources (Settings > Resources) and the registries you
+   `docker login` to.
+6. Any machine role this repository does not manage, such as a CI runner,
+   restored from its own private runbook.
+
+Docker volumes are not copied; recreate their data from its source.
 
 ## Version policy
 
 Homebrew is intentionally rolling-release and has no Brewfile lockfile. Runtime
-versions are declared in `config/versions.env`; projects should additionally
+versions are declared in `config/versions.sh`; projects should additionally
 commit `.python-version`, `uv.lock`, `package.json`, and `pnpm-lock.yaml`.
 
-On the first runtime phase, channel selections such as Node 22 and Python 3.13
-are resolved to exact patch versions and written to `config/runtime-lock.env`.
+On the first runtime phase, channel selections such as Node 24 and Python 3.13
+are resolved to exact patch versions and written to `config/runtime-lock.sh`.
 Commit that generated file. Later Macs source it automatically and reproduce the
-same Node, pnpm, Python, and Gemini CLI versions. To intentionally refresh the
-lock, remove it in a reviewed commit, change channels if desired, and rerun the
-runtime phase.
+same Node, pnpm, and Python versions. To intentionally refresh the lock, remove
+it in a reviewed commit, change channels if desired, and rerun the runtime phase.
 
 Homebrew state is separated into `brew/Brewfile.core`, `brew/Brewfile.apps`, and
 `brew/Brewfile.vscode` so optional installers cannot block the required toolchain.
 The root `Brewfile` aggregates all three for standard `brew bundle` commands.
 
 Oh My Zsh is cloned directly and checked out at the exact reviewed commit in
-`config/versions.env`. Its own automatic updater is disabled; updates are made
+`config/versions.sh`. Its own automatic updater is disabled; updates are made
 by intentionally changing that pin.
-
-Gemini CLI is version-pinned through Volta to avoid Homebrew installing a second
-Node.js. Its upstream Homebrew formula is scheduled for deprecation in favor of
-Antigravity CLI, so that migration should be reviewed during a future update.
 
 ## Safety
 
@@ -97,9 +121,6 @@ Antigravity CLI, so that migration should be reviewed during a future update.
 
 ## Manual applications
 
-- ExpressVPN: download and open the official macOS installer, then approve its
-  privileged helper in the GUI. It is excluded from `Brewfile` because that
-  helper can fail under Homebrew's non-interactive cask installation.
 - GitHub Copilot in VS Code: use the current built-in Copilot Chat and sign in
   interactively. Legacy `github.copilot*` marketplace entries are excluded to
   prevent attempts to downgrade the built-in extension.

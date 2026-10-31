@@ -23,6 +23,6 @@ brew bundle dump --file="$directory/Brewfile" --force --describe
   command -v pnpm >/dev/null 2>&1 && echo "pnpm=$(pnpm --version)"
   command -v uv >/dev/null 2>&1 && echo "uv=$(uv --version)"
   [[ -d "$HOME/.oh-my-zsh/.git" ]] && echo "oh_my_zsh=$(git -C "$HOME/.oh-my-zsh" rev-parse HEAD)"
-} > "$directory/versions.env"
+} > "$directory/versions.txt"
 
 echo "Snapshot written to $directory"
