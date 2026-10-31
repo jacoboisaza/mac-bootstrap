@@ -107,7 +107,7 @@ export PATH="$HOME/.local/bin:$VOLTA_HOME/bin:/opt/homebrew/opt/libpq/bin:$PATH"
 
 apply_bundle() {
   local label="$1" manifest="$2"
-  if [[ "$DRY_RUN" != "1" ]] && brew bundle check --file="$manifest" >/dev/null 2>&1; then
+  if [[ "$DRY_RUN" != "1" ]] && brew bundle check --no-upgrade --file="$manifest" >/dev/null 2>&1; then
     echo "SATISFIED $label"
     return 0
   fi

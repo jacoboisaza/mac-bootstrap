@@ -42,13 +42,13 @@ xcode-select -p >/dev/null 2>&1 && ok "Xcode Command Line Tools" || bad "Xcode C
 
 if command -v brew >/dev/null 2>&1; then
   ok "Homebrew environment"
-  brew bundle check --file="$ROOT_DIR/brew/Brewfile.core" >/dev/null 2>&1 \
+  brew bundle check --no-upgrade --file="$ROOT_DIR/brew/Brewfile.core" >/dev/null 2>&1 \
     && ok "Required Homebrew tools" \
     || bad "Required Homebrew tools; run ./setup --only packages"
-  brew bundle check --file="$ROOT_DIR/brew/Brewfile.apps" >/dev/null 2>&1 \
+  brew bundle check --no-upgrade --file="$ROOT_DIR/brew/Brewfile.apps" >/dev/null 2>&1 \
     && ok "Applications and agent CLIs" \
-    || caution "Applications incomplete; run brew bundle check --verbose --file=brew/Brewfile.apps"
-  brew bundle check --file="$ROOT_DIR/brew/Brewfile.vscode" >/dev/null 2>&1 \
+    || caution "Applications incomplete; run brew bundle check --no-upgrade --verbose --file=brew/Brewfile.apps"
+  brew bundle check --no-upgrade --file="$ROOT_DIR/brew/Brewfile.vscode" >/dev/null 2>&1 \
     && ok "VS Code extensions" \
     || caution "VS Code extensions incomplete; run ./setup --only vscode"
 else
